@@ -3,23 +3,40 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 
-const logFile = path.join(__dirname, 'trackLogs.json');
-
 router.post('/', (req, res) => {
-  const { user, task, events } = req.body;
-  if (!events) return res.status(400).json({ error: 'Missing events' });
+  const { user, platform, task, events } = req.body;
 
-  const entry = {
+  if (!user || !platform || !task || !events) {
+    return res.status(400).json({ error: 'Missing fields in request body' });
+  }
+
+  // 构建路径：exp/platform/task/username.json
+  const logDir = path.join(__dirname, '..', 'exp', platform, task);
+  const logFile = path.join(logDir, `${user}.json`);
+
+  fs.mkdirSync(logDir, { recursive: true });
+
+  let existingEvents = [];
+
+  if (fs.existsSync(logFile)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(logFile, 'utf-8'));
+      if (Array.isArray(data.events)) {
+        existingEvents = data.events;
+      }
+    } catch (err) {
+      console.error('Error reading existing log:', err);
+    }
+  }
+
+  const mergedEvents = [...existingEvents, ...events];
+
+  const output = {
     timestamp: new Date().toISOString(),
-    user, task, events
+    events: mergedEvents
   };
 
-  let logs = [];
-  if (fs.existsSync(logFile)) {
-    logs = JSON.parse(fs.readFileSync(logFile));
-  }
-  logs.push(entry);
-  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+  fs.writeFileSync(logFile, JSON.stringify(output, null, 2), 'utf-8');
 
   res.json({ status: 'ok' });
 });

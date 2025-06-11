@@ -15,13 +15,26 @@ router.post('/', async (req, res) => {
       }
     });
 
-    const results = resp.data.organic_results?.map(r => ({
+    const data = resp.data;
+
+    const results = data.organic_results?.map(r => ({
       title: r.title,
       url: r.link,
       snippet: r.snippet
     })) || [];
 
-    res.json({ results });
+    let summary = null;
+    if (data.answer_box?.answer) summary = data.answer_box.answer;
+    else if (data.answer_box?.snippet) summary = data.answer_box.snippet;
+    else if (data.answer_box?.snippet_highlighted_words?.length) {
+      summary = data.answer_box.snippet_highlighted_words.join(', ');
+    }
+
+    // 提取相关搜索词
+    const related = data.related_searches?.map(item => item.query) || [];
+
+    res.json({ results, summary, related });
+
   } catch (err) {
     console.error('Search error:', err.message);
     res.status(500).json({ error: 'Search failed' });

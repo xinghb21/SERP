@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 
-// 模拟聊天接口
 router.post('/', async (req, res) => {
   const { messages } = req.body;
   const lastUserMessage = messages?.filter(m => m.role === 'user').pop()?.content || '';

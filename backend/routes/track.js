@@ -10,9 +10,9 @@ router.post('/', (req, res) => {
     return res.status(400).json({ error: 'Missing fields in request body' });
   }
 
-  // 构建路径：exp/platform/task/username.json
-  const logDir = path.join(__dirname, '..', 'exp', platform, task);
-  const logFile = path.join(logDir, `${user}.json`);
+  // 构建路径：exp/platform/task/username/data.json
+  const logDir = path.join(__dirname, '..', '..', 'exp', platform, task, user);
+  const logFile = path.join(logDir, 'data.json');
 
   fs.mkdirSync(logDir, { recursive: true });
 

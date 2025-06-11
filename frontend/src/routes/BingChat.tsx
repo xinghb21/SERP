@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import axios from 'axios';
-import { SessionContext } from '../types/SessionContext';
+import { SessionContext, type SessionInfo } from '../types/SessionContext';
 import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
 
 interface Message {
@@ -8,7 +8,7 @@ interface Message {
   content: string;
 }
 
-const BingChat: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit }) => {
   const session = useContext(SessionContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -34,6 +34,10 @@ const BingChat: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleClick = () => {
+    onExit(session!)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <div style={{
@@ -44,7 +48,7 @@ const BingChat: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           当前任务：<b>{session?.concreteTask}</b>
         </div>
         <button
-          onClick={onExit}
+          onClick={handleClick}
           style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '6px 12px', borderRadius: 4 }}
           data-component="EndExperimentButton"
         >

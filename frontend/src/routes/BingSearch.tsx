@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
 import axios from 'axios';
-import { SessionContext } from '../types/SessionContext';
+import { SessionContext, type SessionInfo } from '../types/SessionContext';
 import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
 
-const BingSearch: React.FC<{ onExit: () => void }> = ({ onExit }) => {
+const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit }) => {
   const session = useContext(SessionContext);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
@@ -27,6 +27,10 @@ const BingSearch: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     }
   };
 
+  const handleClick = () => {
+    onExit(session!)
+  }
+
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: 20 }}>
       <div style={{
@@ -37,7 +41,7 @@ const BingSearch: React.FC<{ onExit: () => void }> = ({ onExit }) => {
           当前任务：<b>{session?.concreteTask}</b>
         </div>
         <button
-          onClick={onExit}
+          onClick={handleClick}
           style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '6px 12px', borderRadius: 4 }}
           data-component="EndExperimentButton"
         >

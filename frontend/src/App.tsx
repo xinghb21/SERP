@@ -5,6 +5,7 @@ import BingSearch from './routes/BingSearch';
 import BingChat from './routes/BingChat';
 import FeedbackPage from './routes/FeedbackPage';
 import { SessionContext, type SessionInfo } from './types/SessionContext';
+import axios from 'axios';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<SessionInfo | null>(null);
@@ -27,7 +28,15 @@ const App: React.FC = () => {
   const handleStart = (info: SessionInfo) => {
     localStorage.setItem('session', JSON.stringify(info));
     setSession(info);
+    axios.post('/api/gaze/start', info).catch(console.error);
+
   };
+
+  // 完成实验时调用
+  const handleDone = (info: SessionInfo) => {
+    window.location.href = '/feedback';
+    axios.post('/api/gaze/stop', info).catch(console.error);
+  }
 
   // 提交反馈后调用
   const handleEnd = () => {
@@ -44,12 +53,12 @@ const App: React.FC = () => {
           <Route path="/" element={<LoginPage onStart={handleStart} />} />
           <Route path="/search" element={
             session?.platform === 'Bing'
-              ? <BingSearch onExit={() => window.location.href = '/feedback'} />
+              ? <BingSearch onExit={handleDone} />
               : <Navigate to="/" />
           } />
           <Route path="/chat" element={
             session?.platform === 'Bing Chat'
-              ? <BingChat onExit={() => window.location.href = '/feedback'} />
+              ? <BingChat onExit={handleDone} />
               : <Navigate to="/" />
           } />
           <Route path="/feedback" element={

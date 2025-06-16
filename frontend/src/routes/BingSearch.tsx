@@ -13,10 +13,11 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
 
   useBehaviorTracker({ ...session!, active: true });
 
-  const handleSearch = async () => {
+  const handleSearch = async (q?: string) => {
+    const searchTerm = q ?? query;
     setLoading(true);
     try {
-      const response = await axios.post('/api/search', { query });
+      const response = await axios.post('/api/search', { query: searchTerm });
       setResults(response.data.results || []);
       setSummary(response.data.summary || null);
       setRelated(response.data.related || []);
@@ -26,6 +27,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
       setLoading(false);
     }
   };
+
 
   const handleClick = () => {
     onExit(session!)
@@ -59,7 +61,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
           data-component="SearchInput"
         />
         <button
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
           disabled={loading}
           style={{ padding: '8px 16px', marginLeft: 8 }}
           data-component="SearchButton"
@@ -85,11 +87,30 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
       ))}
 
       {related.length > 0 && (
-        <ul data-component="RelatedSuggestions" style={{ marginTop: 20 }}>
-          <strong>相关推荐：</strong>
-          {related.map((r, i) => <li key={i}>{r}</li>)}
-        </ul>
-      )}
+      <div data-component="RelatedSuggestions" style={{ marginTop: 20 }}>
+        <strong style={{ display: 'block', marginBottom: 8 }}>相关推荐：</strong>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {related.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setQuery(r);
+                handleSearch(r); 
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#f0f0f0',
+                border: '1px solid #ccc',
+                borderRadius: 4,
+                cursor: 'pointer'
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
     </div>
   );
 };

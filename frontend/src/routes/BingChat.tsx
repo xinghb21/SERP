@@ -13,12 +13,15 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [related, setRelated] = useState<string[]>([]);
 
   useBehaviorTracker({ ...session!, active: true });
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const newMessages = [...messages, { role: 'user' as const, content: input }];
+  const handleSend = async (optionalInput?: string) => {
+    const inputValue = optionalInput ?? input;
+    if (!inputValue.trim()) return;
+
+    const newMessages = [...messages, { role: 'user' as const, content: inputValue }];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
@@ -26,7 +29,9 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
     try {
       const res = await axios.post('/api/chat', { messages: newMessages });
       const reply = res.data.reply || '对不起，我没有理解你的问题。';
+      const newRelated = res.data.related || [];
       setMessages([...newMessages, { role: 'assistant' as const, content: reply }]);
+      setRelated(newRelated);
     } catch (err) {
       console.error('Chat error:', err);
     } finally {
@@ -35,11 +40,12 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
   };
 
   const handleClick = () => {
-    onExit(session!)
-  }
+    onExit(session!);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* 顶部任务与结束按钮 */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: 12, borderBottom: '1px solid #ccc'
@@ -56,7 +62,8 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+      {/* 聊天信息承载区域 */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16 }} data-component="ChatContent">
         {messages.map((m, i) => (
           <div key={i} data-component="ChatMessage" style={{ marginBottom: 12 }}>
             <strong>{m.role === 'user' ? '👤 用户' : '🤖 AI'}：</strong> {m.content}
@@ -64,6 +71,42 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
         ))}
       </div>
 
+      {/* 相关推荐扩展组件 */}
+      {related.length > 0 && (
+        <div
+          data-component="ChatRelated"
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#f4f4f4',
+            borderTop: '1px solid #ccc',
+            fontSize: 14
+          }}
+        >
+          <b>相关推荐：</b>
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {related.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setInput(item);
+                  handleSend(item);
+                }}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#fff',
+                  border: '1px solid #ccc',
+                  borderRadius: 4,
+                  cursor: 'pointer'
+                }}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 底部输入组件 */}
       <div
         style={{ borderTop: '1px solid #ccc', padding: 12, display: 'flex', gap: 8 }}
         data-component="ChatInputBox"
@@ -76,7 +119,7 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
           style={{ flex: 1, padding: 8 }}
         />
         <button
-          onClick={handleSend}
+          onClick={() => handleSend()}
           disabled={!input.trim() || loading}
           style={{ padding: '8px 16px' }}
           data-component="ChatSendButton"

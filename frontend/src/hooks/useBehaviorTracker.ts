@@ -55,11 +55,20 @@ export const useBehaviorTracker = ({ username, platform, task, active }: Tracker
     // 点击事件
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      log('click', {
-        x: e.clientX,
-        y: e.clientY,
-        component: getComponentLabel(target)
-      });
+      const el = (target)?.closest('a');
+      const href = el?.getAttribute('href');
+      if (href && !href.startsWith(window.location.origin)) {
+        log('navigation_out_start', {
+          href,
+          component: el?.getAttribute('data-component') || 'unknown'
+        });
+      } else {
+        log('click', {
+          x: e.clientX,
+          y: e.clientY,
+          component: getComponentLabel(target)
+        });
+      }
     };
 
     // 键盘事件
@@ -156,6 +165,12 @@ export const useBehaviorTracker = ({ username, platform, task, active }: Tracker
       });
     };
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        log('navigation_return', {});
+      }
+    };
+
     // 数据上报
     const sendData = () => {
       if (buffer.length === 0) return;
@@ -176,6 +191,7 @@ export const useBehaviorTracker = ({ username, platform, task, active }: Tracker
     document.addEventListener('input', handleInput);
     document.addEventListener('mouseenter', handleMouseEnter, true);
     document.addEventListener('mouseleave', handleMouseLeave, true);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('scroll', handleScroll);
 
     const interval = setInterval(sendData, 5000);
@@ -187,6 +203,7 @@ export const useBehaviorTracker = ({ username, platform, task, active }: Tracker
       document.removeEventListener('input', handleInput);
       document.removeEventListener('mouseenter', handleMouseEnter, true);
       document.removeEventListener('mouseleave', handleMouseLeave, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('scroll', handleScroll);
       clearInterval(interval);
       sendData();

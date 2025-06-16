@@ -48,7 +48,7 @@ router.post('/', (req, res) => {
   const results = [
     {
       title: `关于 "${query}" 的第一个结果`,
-      url: 'https://example.com/1',
+      url: 'https://www.baidu.com/s?wd=' + encodeURIComponent(query),
       snippet: `这是关于 "${query}" 的简要介绍内容，帮助你了解背景信息。`
     },
     {

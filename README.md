@@ -21,7 +21,8 @@ project-root/
 │   ├── routes/              # search / chat / track 等接口模块
 │   │   ├── search.js
 │   │   ├── chat.js
-│   │   └── track.js
+│   │   ├── track.js
+│   |   └── gaze.js
 │   ├── server.js            # 启动入口，加载各个路由
 │   └── package.json
 │
@@ -56,7 +57,7 @@ node server.js
 #### 启动前端（端口默认 5173）
 
 ```bash
-cd client
+cd frontend
 npm run dev
 ```
 
@@ -69,7 +70,6 @@ npm run dev
 ## TODO
 
 - 用户反馈页面设计
-- 添加跳转行为事件，明确用户跳出搜索引擎界面的时间
 - 界面优化调整，三种组件的位置
 - 相关推荐部分接入API，并实现点击跳转
 - Chat和Search接入API

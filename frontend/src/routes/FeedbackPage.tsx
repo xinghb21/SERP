@@ -25,17 +25,19 @@ const FeedbackPage: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   const [suqScores, setSuqScores] = useState<number[]>(Array(SUQ_ITEMS.length).fill(3));
   const [suggestion, setSuggestion] = useState('');
 
+  const curTask = session?.taskSequence[session.currentTaskId];
+
   const handleSubmit = async () => {
     const endTime = Date.now();
     try {
       await axios.post('/api/track', {
         user: session?.username,
-        platform: session?.platform,
-        task: session?.task,
+        platform: curTask?.platform,
+        task: curTask?.type,
         session: {
-          start: session?.startTime,
+          start: curTask?.startTime,
           end: endTime,
-          durationMs: session?.startTime ? endTime - session.startTime : 0
+          durationMs: curTask?.startTime ? endTime - curTask.startTime : 0
         },
         feedback: {
           tlx: tlxScores,
@@ -59,7 +61,7 @@ const FeedbackPage: React.FC<{ onDone: () => void }> = ({ onDone }) => {
   return (
     <div style={{ maxWidth: 800, margin: '80px auto', padding: 24 }}>
       <h2>实验反馈问卷</h2>
-      <p>平台：<b>{session?.platform}</b> | 任务类型：<b>{session?.task}</b></p>
+      <p>平台：<b>{curTask?.platform}</b> | 任务类型：<b>{curTask?.type}</b></p>
 
       <hr style={{ margin: '16px 0' }} />
       <h3>任务负荷评分（1=最低，5=最高）</h3>

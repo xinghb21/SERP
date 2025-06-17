@@ -15,7 +15,9 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
   const [loading, setLoading] = useState(false);
   const [related, setRelated] = useState<string[]>([]);
 
-  useBehaviorTracker({ ...session!, active: true });
+  const curTask = session!.taskSequence[session!.currentTaskId];
+  
+  useBehaviorTracker({username: session!.username, platform: curTask.platform, task: curTask.type, active: true});
 
   const handleSend = async (optionalInput?: string) => {
     const inputValue = optionalInput ?? input;
@@ -51,7 +53,7 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
         padding: 12, borderBottom: '1px solid #ccc'
       }}>
         <div data-component="TaskDisplay">
-          当前任务：<b>{session?.concreteTask}</b>
+          当前任务ID：<b>{curTask.index}</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;当前任务：<b>{curTask.task}</b>
         </div>
         <button
           onClick={handleClick}

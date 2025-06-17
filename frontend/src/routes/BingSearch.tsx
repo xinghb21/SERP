@@ -11,7 +11,9 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
   const [related, setRelated] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useBehaviorTracker({ ...session!, active: true });
+  const curTask = session!.taskSequence[session!.currentTaskId];
+
+  useBehaviorTracker({username: session!.username, platform: curTask.platform, task: curTask.type, active: true});
 
   const handleSearch = async (q?: string) => {
     const searchTerm = q ?? query;
@@ -28,7 +30,6 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
     }
   };
 
-
   const handleClick = () => {
     onExit(session!)
   }
@@ -40,7 +41,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
         marginBottom: 20, borderBottom: '1px solid #ccc', paddingBottom: 10
       }}>
         <div data-component="TaskDisplay">
-          当前任务：<b>{session?.concreteTask}</b>
+          当前任务ID：<b>{curTask.index}</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;当前任务：<b>{curTask.task}</b>
         </div>
         <button
           onClick={handleClick}

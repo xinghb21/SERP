@@ -1,4 +1,4 @@
-export const TASK_POOL: Record<string, string[]> = {
+const TASK_POOL = {
   Advice: ["请为用户提供健康建议", "提出节能生活的建议", "推荐学习方法"],
   Attribute: ["描述一项产品的主要特性", "列举某城市的气候特点"],
   Calculation: ["计算地球到月球的平均距离", "估算每日所需热量"],
@@ -16,3 +16,5 @@ export const TASK_POOL: Record<string, string[]> = {
   Verification: ["核实乔布斯的出生年份", "确认某公司是否上市"],
   Weather: ["今天纽约天气如何", "描述春季的气候特点"]
 };
+
+module.exports = TASK_POOL;

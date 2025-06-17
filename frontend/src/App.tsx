@@ -40,8 +40,18 @@ const App: React.FC = () => {
 
   // 提交反馈后调用
   const handleEnd = () => {
-    localStorage.removeItem('session');
-    setSession(null);
+    const taskIndex = session?.currentTaskId || 0;
+    if (taskIndex < (session?.taskSequence.length || 0) - 1) {
+      session!.currentTaskId += 1;
+      session!.taskSequence[session!.currentTaskId].startTime = Date.now();
+      localStorage.setItem('session', JSON.stringify(session));
+      setSession({ ...session! });
+      window.location.href = session!.taskSequence[session!.currentTaskId].platform === 'Bing Chat' ? '/chat' : '/search';
+    } else {
+      localStorage.removeItem('session');
+      setSession(null);
+      window.location.href = '/';
+    }
   };
 
   if (!loaded) return <div>加载中...</div>;
@@ -52,19 +62,17 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LoginPage onStart={handleStart} />} />
           <Route path="/search" element={
-            session?.platform === 'Bing'
+            session?.taskSequence[session?.currentTaskId].platform === 'Bing'
               ? <BingSearch onExit={handleDone} />
               : <Navigate to="/" />
           } />
           <Route path="/chat" element={
-            session?.platform === 'Bing Chat'
+            session?.taskSequence[session?.currentTaskId].platform === 'Bing Chat'
               ? <BingChat onExit={handleDone} />
               : <Navigate to="/" />
           } />
           <Route path="/feedback" element={
-            session
-              ? <FeedbackPage onDone={handleEnd} />
-              : <Navigate to="/" />
+            session ? <FeedbackPage onDone={handleEnd} /> : <Navigate to="/" />
           } />
         </Routes>
       </SessionContext.Provider>

@@ -78,9 +78,11 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
       </div>
       <div className='body'>
         <div className='left-body'>
-          <div className='results-header'>
-            <div className='results-count'>约 8,790,000个结果</div>
-          </div>
+          { results.length !== 0 && !loading && (
+            <div className='results-header'>
+              <div className='results-count'>约 8,790,000个结果</div>
+            </div>
+          )}
           {summary && (
             <div data-component="AISummary" className='ai-summary-container'>
               <div className='ai-summary-title'>{query}</div>
@@ -98,6 +100,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
             </div>
           ))}
 
+          { results.length !== 0 && !loading && (
           <div className='pagination'>
             <div className='page-btn active'>1</div>
             <div className='page-btn'>2</div>
@@ -106,6 +109,8 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
             <div className='page-btn'>5</div>
             <div className='page-btn'>下一页</div>
           </div>
+          )}
+
         </div>
         <div className='right-body'>
            {related.length > 0 && (

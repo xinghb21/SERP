@@ -108,7 +108,7 @@ const FeedbackPage: React.FC<{ onDone: () => void }> = ({ onDone }) => {
           fontWeight: 'bold',
           fontSize: 15
         }}>
-          提交反馈并结束实验
+          {(session?.currentTaskId || 0) < (session?.taskSequence.length || 0) ? '提交并继续' : '提交并结束实验'}
         </button>
       </div>
     </div>

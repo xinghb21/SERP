@@ -40,7 +40,12 @@ router.get('/:userId', (req, res) => {
     };
   });
 
-  res.json(sequence);
+  const sortedSequence = [
+    ...sequence.filter(item => item.index % 2 === 1),
+    ...sequence.filter(item => item.index % 2 === 0)
+  ];
+
+  res.json(sortedSequence);
 });
 
 module.exports = router;

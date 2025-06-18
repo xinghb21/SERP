@@ -41,7 +41,7 @@ const App: React.FC = () => {
   // 提交反馈后调用
   const handleEnd = () => {
     const taskIndex = session?.currentTaskId || 0;
-    if (taskIndex < (session?.taskSequence.length || 0) - 1) {
+    if (taskIndex < (session?.taskSequence.length || 0)) {
       session!.currentTaskId += 1;
       session!.taskSequence[session!.currentTaskId].startTime = Date.now();
       localStorage.setItem('session', JSON.stringify(session));

@@ -151,6 +151,11 @@
     padding: 0 20px;
 }
 
+.chat-related-box:hover {
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
 .chat-related-box-title {
     font-size: 16px;
     font-weight: bold;

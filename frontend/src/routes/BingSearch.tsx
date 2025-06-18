@@ -9,6 +9,7 @@ import '../styles/BingSearch.css';
 const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit }) => {
   const session = useContext(SessionContext);
   const [query, setQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [related, setRelated] = useState<string[]>([]);
@@ -21,6 +22,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
   const handleSearch = async (q?: string) => {
     const searchTerm = q ?? query;
     setLoading(true);
+    setSearchQuery(searchTerm);
     try {
       const response = await axios.post('/api/search', { query: searchTerm });
       setResults(response.data.results || []);
@@ -85,7 +87,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
           )}
           {summary && (
             <div data-component="AISummary" className='ai-summary-container'>
-              <div className='ai-summary-title'>{query}</div>
+              <div className='ai-summary-title'>{searchQuery}</div>
               <div className='ai-summary-desc'>{summary}</div>
             </div>
           )}
@@ -115,7 +117,7 @@ const BingSearch: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit 
         <div className='right-body'>
            {related.length > 0 && (
             <div data-component="RelatedSuggestions" className='related-suggestions-container'>
-              <p className='related-suggestions-title'><span className='related-suggestions-title-red'>{query} </span>的相关推荐</p>
+              <p className='related-suggestions-title'><span className='related-suggestions-title-red'>{searchQuery} </span>的相关推荐</p>
               <div className='related-suggestions-button-container'>
                 {related.map((r, i) => (
                   <>

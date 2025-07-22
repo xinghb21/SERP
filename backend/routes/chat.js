@@ -1,17 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 
 router.post('/', async (req, res) => {
   const { messages } = req.body;
   const lastUserMessage = messages?.filter(m => m.role === 'user').pop()?.content || '';
+  try {
+    const response = await axios.post('http://localhost:5001/bing_chat', {
+      message: lastUserMessage,
+      thread_id: "demo"
+    });
 
-  const reply = `AI 回复：这是对 “${lastUserMessage}” 的回答（模拟）。`;
-  const related = ['你可以问它定义', '深入了解原理', '实际应用场景'];
-
-  res.json({
-    reply,
-    related
-  });
+    res.json({
+      reply: response.data.reply,
+      related: response.data.related
+    });
+  } catch (error) {
+    console.error('Error in chat route:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 module.exports = router;

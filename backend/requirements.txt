@@ -1,0 +1,7 @@
+langchain
+langchain-openai
+langchain-community
+serpapi
+google-search-results
+flask
+langgraph

@@ -2,79 +2,90 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-// router.post('/', async (req, res) => {
-//   const { query } = req.body;
-//   if (!query) return res.status(400).json({ error: 'Missing query' });
-
-//   try {
-//     const resp = await axios.get('https://serpapi.com/search.json', {
-//       params: {
-//         q: query,
-//         engine: 'bing',
-//         api_key: process.env.SERPAPI_KEY
-//       }
-//     });
-
-//     const data = resp.data;
-
-//     const results = data.organic_results?.map(r => ({
-//       title: r.title,
-//       url: r.link,
-//       snippet: r.snippet
-//     })) || [];
-
-//     let summary = null;
-//     if (data.answer_box?.answer) summary = data.answer_box.answer;
-//     else if (data.answer_box?.snippet) summary = data.answer_box.snippet;
-//     else if (data.answer_box?.snippet_highlighted_words?.length) {
-//       summary = data.answer_box.snippet_highlighted_words.join(', ');
-//     }
-
-//     const related = data.related_searches?.map(item => item.query) || [];
-
-//     res.json({ results, summary, related });
-
-//   } catch (err) {
-//     console.error('Search error:', err.message);
-//     res.status(500).json({ error: 'Search failed' });
-//   }
-// });
-
-router.post('/', (req, res) => {
-  const { query } = req.body;
+router.post('/', async (req, res) => {
+  const { query, page } = req.body; // 添加分页参数
   if (!query) return res.status(400).json({ error: 'Missing query' });
 
-  // 模拟结果数据
-  const results = [
-    {
-      title: `关于 "${query}" 的第一个结果`,
-      url: 'https://www.baidu.com/s?wd=' + encodeURIComponent(query),
-      snippet: `这是关于 "${query}" 的简要介绍内容，帮助你了解背景信息。`
-    },
-    {
-      title: `深入探讨 "${query}" 的第二个资源`,
-      url: 'https://example.com/2',
-      snippet: `该页面提供了与 "${query}" 相关的详细说明和示例。`
-    },
-    {
-      title: `"${query}" 的常见应用`,
-      url: 'https://example.com/3',
-      snippet: `探索 "${query}" 在现实生活中的常见用途与影响。`
+  try {
+    const params = {
+      q: query,
+      engine: 'bing',
+      cc: 'CN',
+      api_key: process.env.SERPAPI_KEY,
+      count: 50
+    };
+
+    const resp = await axios.get('https://serpapi.com/search.json', { params });
+
+    const data = resp.data;
+    console.log('Full Bing response:', data); // 调试时使用
+
+    // 1. 自然结果
+    const results = data.organic_results?.map(r => ({
+      title: r.title,
+      url: r.link,
+      displayLink: r.displayed_link || new URL(r.link).hostname.replace('www.', ''),
+      thumbnail: r.thumbnail || null,
+      snippet: r.snippet,
+      date: r.date
+    })) || [];
+
+    // 2. 广告结果
+    const ads = data.ads?.map(ad => ({
+      title: ad.title,
+      url: ad.link,
+      displayLink: ad.displayed_link || new URL(ad.link).hostname.replace('www.', ''),
+      snippet: ad.snippet,
+      position: ad.position
+    })) || [];
+
+    // 3. 知识卡片/答案框
+    let knowledgeCard = null;
+    if (data.knowledge_graph) {
+      knowledgeCard = {
+        title: data.knowledge_graph.title,
+        description: data.knowledge_graph.description,
+        url: data.knowledge_graph.source?.link,
+        image: data.knowledge_graph.image,
+        attributes: data.knowledge_graph.attributes
+      };
+    } else if (data.answer_box) {
+      knowledgeCard = {
+        type: 'answer_box',
+        answer: data.answer_box.answer || data.answer_box.snippet
+      };
     }
-  ];
 
-  // 模拟 AI 摘要
-  const summary = `"${query}" 是一个被广泛研究和应用的概念，其影响遍及多个领域。`;
+    // 4. 相关问题
+    const relatedQuestions = data.related_questions?.map(q => ({
+      question: q.question,
+      snippet: q.snippet,
+      url: q.link
+    })) || [];
 
-  // 模拟相关搜索词
-  const related = [
-    `什么是 ${query}`,
-    `${query} 的应用场景`,
-    `${query} 和 AI 的关系`,
-    `${query} 的未来发展趋势`
-  ];
+    // 5. 相关搜索
+    const relatedSearches = data.related_searches?.map(item => item.query) || [];
 
-  res.json({ results, summary, related });
+    // 6. 分页信息
+    const pagination = {
+      currentPage: page,
+      totalResults: data.search_information?.total_results || 0,
+      nextPage: data.serpapi_pagination?.next || null
+    };
+
+    res.json({
+      results,
+      ads,
+      knowledgeCard,
+      relatedQuestions,
+      relatedSearches,
+      pagination
+    });
+
+  } catch (err) {
+    console.error('Search error:', err.message);
+    res.status(500).json({ error: 'Search failed' });
+  }
 });
 
 module.exports = router;

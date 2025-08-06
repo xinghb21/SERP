@@ -14,6 +14,8 @@ from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SerpAPIWrapper
 from langgraph.checkpoint.memory import InMemorySaver
 
+from related_schemas import Related
+
 memory = InMemorySaver()
 
 class State(TypedDict):
@@ -31,10 +33,15 @@ serpapiWrapper = SerpAPIWrapper(
         "engine": "google",
         "cc": "US",
         "safeSearch": "strict",
-        "json_restrictor": "organic_results[0:3].{snippet, title, link}",
+        "json_restrictor": "organic_results[0:3].{link, favicon, snippet, source, title}",
     }
 )
 tools[0].func = serpapiWrapper.run
+
+class ToolCallContext:
+    def __init__(self):
+        self.tool_called = False
+        self.related_list = []
 
 llm = ChatOpenAI(
     base_url = "https://api.gpt.ge/v1",
@@ -64,7 +71,7 @@ graph = graph_builder.compile(checkpointer=memory)
 app = Flask(__name__)
 
 
-def generate_reply(user_message, thread_id):
+def generate_reply(user_message, thread_id, ctx: ToolCallContext):
     config = {"configurable": {"thread_id": thread_id}}
     input_messages = [
         {
@@ -80,22 +87,37 @@ def generate_reply(user_message, thread_id):
     for step, metadata in graph.stream({'messages': input_messages}, config, stream_mode="messages"):
         if metadata["langgraph_node"] == "chatbot" and (text := step.text()):
             yield 'data: ' + json.dumps({"reply": text or "", "related": []}) + '\n\n'
+        elif metadata["langgraph_node"] == "tools":
+            ctx.tool_called = True
+
 # 路由接口
 @app.route('/bing_chat', methods=['POST'])
 def generate_reply_route():
+
     data = request.get_json()
     user_message = data.get("message", "")
     thread_id = data.get("thread_id", "thread-default")
 
     def stream_response():
+        ctx = ToolCallContext()
+
         # 初始化响应
         yield 'data: ' + json.dumps({"reply": "", "related": []}) + '\n\n'
 
         # 逐步返回流式数据
-        yield from generate_reply(user_message, thread_id)
+        yield from generate_reply(user_message, thread_id, ctx)
 
+        if ctx.tool_called:
+            # print(serpapiWrapper.result['organic_results'])
+            for result in serpapiWrapper.result['organic_results']:
+                ctx.related_list.append(Related(**result))
         # 返回推荐结果
-        yield 'data: ' + json.dumps({"reply": "", "related": [serpapiWrapper.result['organic_results'][0]['title'], "3", "4"]}) + '\n\n'
+        related_data = [
+            {"title": related.title, "link": str(related.link), "favicon": str(related.favicon), "source": related.source}
+            for related in ctx.related_list
+        ]
+        # print(related_data)
+        yield 'data: ' + json.dumps({"reply": "", "related": related_data}, ensure_ascii=False) + '\n\n'
 
     return Response(stream_response(), content_type='text/event-stream')
 

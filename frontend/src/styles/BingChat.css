@@ -149,6 +149,9 @@
     background-color: #fdedde;
     border-radius: 12px;
     padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
 }
 
 .chat-related-box:hover {
@@ -156,13 +159,35 @@
     cursor: pointer;
 }
 
+
+.chat-related-box-header {
+    position: relative;
+    top: 0px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    /* background-color: blue; */
+}
+.chat-related-box-favicon {
+    /* position: relative;
+    top: 5px;
+    margin-right: 5px; */
+    position: relative;
+    top: 2px;
+    width: 12px;
+}
+
+.chat-related-box-source {
+    font-size: 12px;
+    /* margin: 0; */
+}
+
 .chat-related-box-title {
     font-size: 16px;
     font-weight: bold;
     color: #854c32;
-}
-.chat-related-box-url {
-    font-size: 13px;
+    /* background-color: red; */
+    margin: 0;
 }
 
 .chat-body {

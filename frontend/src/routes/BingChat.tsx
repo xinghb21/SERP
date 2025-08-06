@@ -12,12 +12,20 @@ interface Message {
   content: string;
 }
 
+interface Related {
+  title: string;
+  link: string;
+  favicon: string;
+  source: string;
+}
+
 const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit }) => {
   const session = useContext(SessionContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [related, setRelated] = useState<string[]>([]);
+  // const [related, setRelated] = useState<string[]>([]);
+  const [related, setRelated] = useState<Related[]>([]);
 
   const curTask = session!.taskSequence[session!.currentTaskId];
   
@@ -221,24 +229,19 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
                 <div 
                   key={idx}
                   onClick={() => {
-                    setInput(item);
-                    handleSend(item);
+                    // setInput(item.title);
+                    // handleSend(item.title);
+                    window.open(item.link, '_blank');
                   }}
                   className='chat-related-box'
                 >
-                  <p className='chat-related-box-title'>{item}</p>
-                  <p className='chat-related-box-url'>https://TODO.com</p>
+                  <div className='chat-related-box-header'>
+                    <img src={item.favicon} width={15} className='chat-related-box-favicon'></img>
+                    <p className='chat-related-box-source'>{item.source}</p>
+                  </div>
+                  <p className='chat-related-box-title'>{item.title}</p>
+                  {/* <p className='chat-related-box-url'>{item.link}</p> */}
                 </div>
-                // <button
-                //   key={idx}
-                //   onClick={() => {
-                //     setInput(item);
-                //     handleSend(item);
-                //   }}
-                //   className='related-item'
-                // >
-                //   {item}
-                // </button>
               ))}
           </div>
         }

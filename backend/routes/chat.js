@@ -31,14 +31,17 @@ router.post('/', async (req, res) => {
       
       // 过滤掉 'data: ' 部分，提取 JSON 数据
       const jsonString = chunkString.replace(/^data: /, '');
-
+      // console.log(jsonString.toString());
       const data = JSON.parse(jsonString.toString());
+
       if (data.reply) {
         reply += data.reply;  // 拼接流式数据
         res.write(`data: ${JSON.stringify({reply: data.reply, related: []})}\n\n`);
       }
       if (data.related) {
         related = data.related;  // 获取 related 数据
+        console.log('Related topics:', related);
+        // related = ["1", "2", "3"];
       }
     });
 

@@ -32,19 +32,63 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
     setInput('');
     setLoading(true);
 
+  //   try {
+  //     const res = await axios.post('/api/chat', { messages: newMessages });
+  //     const reply = res.data.reply || '对不起，我没有理解你的问题。';
+  //     const newRelated = res.data.related || [];
+  //     setMessages([...newMessages, { role: 'assistant' as const, content: reply }]);
+  //     setRelated(newRelated);
+  //   } catch (err) {
+  //     console.error('Chat error:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
     try {
-      const res = await axios.post('/api/chat', { messages: newMessages });
-      const reply = res.data.reply || '对不起，我没有理解你的问题。';
-      const newRelated = res.data.related || [];
-      setMessages([...newMessages, { role: 'assistant' as const, content: reply }]);
-      setRelated(newRelated);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+
+      const reader = response.body?.getReader();
+      let accumulatedReply = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = new TextDecoder().decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.reply) {
+                  accumulatedReply += data.reply;
+                  // 实时更新消息
+                  setMessages([...newMessages, { role: 'assistant' as const, content: accumulatedReply }]);
+                }
+                if (data.related && data.related.length > 0) {
+                  setRelated(data.related);
+                }
+              } catch (e) {
+                console.error('Parse error:', e);
+              }
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error('Chat error:', err);
     } finally {
       setLoading(false);
     }
   };
-
   const handleClick = () => {
     onExit(session!);
   };

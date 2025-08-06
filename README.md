@@ -45,7 +45,14 @@ cd ../backend
 npm install
 ```
 
-### 启动前后端服务
+### 启动前后端服o
+
+#### 启动Bing Chat的API（端口默认 5001）
+由于bing chat的部分是由python实现的，所以没有集成到chat.js中，而是单独将API的部分拿出来了
+```bash
+cd backend
+python3 routes/bing_chat.py
+```
 
 #### 启动后端（端口默认 5000）
 

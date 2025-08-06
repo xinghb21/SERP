@@ -1,11 +1,25 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response
+import os, json
+
+from langchain_core.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.graph import StateGraph, END, START
+from typing_extensions import TypedDict
+from typing import Annotated
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_community.agent_toolkits.load_tools import load_tools
-import os
+
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.prebuilt import create_react_agent
 from langchain_community.utilities import SerpAPIWrapper
+from langgraph.checkpoint.memory import InMemorySaver
+
+memory = InMemorySaver()
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+
+graph_builder = StateGraph(State)
 
 SERPAPI_KEY = "6175c3d4e24c3b4abf9b912a8506ed1afae4da748ac623072d666a1e9080a363"
 os.environ["SERPAPI_API_KEY"] = SERPAPI_KEY
@@ -14,43 +28,77 @@ tools = load_tools(["serpapi"])
 serpapiWrapper = SerpAPIWrapper(
     serpapi_api_key = SERPAPI_KEY,
     params={
-        "engine": "bing",
+        "engine": "google",
         "cc": "US",
         "safeSearch": "strict",
+        "json_restrictor": "organic_results[0:3].{snippet, title, link}",
     }
 )
 tools[0].func = serpapiWrapper.run
+
 llm = ChatOpenAI(
     base_url = "https://api.gpt.ge/v1",
     api_key = "sk-Rl5dEkRmBQzqITvQ84AfE1FaF8F74c5c93113a0a78F9AbEf",
     model = "gpt-4o"
 )
 
-memory = MemorySaver()
-agent = create_react_agent(llm, tools=tools, checkpointer=memory)
+llm_with_tools = llm.bind_tools(tools)
+
+def chatbot(state: State):
+    return {"messages": [llm_with_tools.invoke(state["messages"])]}
+
+graph_builder.add_node("chatbot", chatbot)
+
+tool_node = ToolNode(tools=tools)
+graph_builder.add_node("tools", tool_node)
+
+graph_builder.add_conditional_edges(
+    "chatbot",
+    tools_condition,
+)
+
+graph_builder.add_edge("tools", "chatbot")
+graph_builder.add_edge(START, "chatbot")
+graph = graph_builder.compile(checkpointer=memory)
 
 app = Flask(__name__)
-def generate_reply(user_message, thread_id):
-    # reply = f"AI 回复：这是对 “{user_message}” 的回答（模拟）。"
-    # related = ['你可以问它定义', '深入了解原理', '实际应用场景']
-    # return {"reply": reply, "related": related}
-    config = {"configurable": {"thread_id": thread_id}}
-    input_message = {
-        "role": "user",
-        "content": user_message
-    }
-    response = agent.invoke({'messages': [input_message]}, config)
-    reply = response['messages'][-1].content
-    related = ['你可以问它定义', '深入了解原理', '实际应用场景']
-    return {"reply": reply, "related": related}
 
+
+def generate_reply(user_message, thread_id):
+    config = {"configurable": {"thread_id": thread_id}}
+    input_messages = [
+        {
+            "role": "system",
+            "content": "你是一个聪明、耐心、专业但语气亲切的中文 AI 助手，擅长用清晰、结构化、自然的语言解释复杂的问题。你的目标是帮助用户理解问题、完成任务，并提供详实的回答，而不是简单给出短答案。如果用户提问不够明确，你可以礼貌地引导用户补充更多信息。你可以使用简洁的小标题或编号帮助用户理解内容，但不要啰嗦或显得高高在上。你应该尽量提供实用、详细、有逻辑的回答。如果你不知道答案，请诚实地告诉用户。"
+        },
+        {
+            "role": "user",
+            "content": user_message
+        }
+    ]
+
+    for step, metadata in graph.stream({'messages': input_messages}, config, stream_mode="messages"):
+        if metadata["langgraph_node"] == "chatbot" and (text := step.text()):
+            yield 'data: ' + json.dumps({"reply": text or "", "related": []}) + '\n\n'
+# 路由接口
 @app.route('/bing_chat', methods=['POST'])
 def generate_reply_route():
     data = request.get_json()
     user_message = data.get("message", "")
-    thread_id = data.get("thread_id", {})
-    result = generate_reply(user_message, thread_id)
-    return jsonify(result)
+    thread_id = data.get("thread_id", "thread-default")
 
+    def stream_response():
+        # 初始化响应
+        yield 'data: ' + json.dumps({"reply": "", "related": []}) + '\n\n'
+
+        # 逐步返回流式数据
+        yield from generate_reply(user_message, thread_id)
+
+        # 返回推荐结果
+        yield 'data: ' + json.dumps({"reply": "", "related": [serpapiWrapper.result['organic_results'][0]['title'], "3", "4"]}) + '\n\n'
+
+    return Response(stream_response(), content_type='text/event-stream')
+
+# 启动服务
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

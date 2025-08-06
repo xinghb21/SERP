@@ -126,9 +126,17 @@ const BingChat: React.FC<{ onExit: (info: SessionInfo) => void }> = ({ onExit })
             <>
               <div key={i} className='chat-message-container' data-component="ChatMessage">
                 { m.role === 'user' &&
-                  <div className="user-message">
-                    {m.content}
-                  </div>
+                  <>
+                    <div className="user-message">
+                      {m.content}
+                    </div>
+                    { loading && messages.length === i + 1 &&
+                      <div className='loading-container'>
+                        <span className='loader'></span>
+                        <p>正在搜索"{m.content}"</p>
+                      </div>
+                    }
+                  </>
                 }
                 { m.role !== 'user' &&
                   <div className="ai-message">
